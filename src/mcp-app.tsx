@@ -644,8 +644,7 @@ function ExcalidrawApp() {
     capabilities: {},
     onAppCreated: (app) => {
       appRef.current = app;
-      _logFn = (msg) => app.sendLog({ level: "info", logger: "FS", data: msg });
-      fsLog("app created, logger ready");
+      _logFn = (msg) => { try { app.sendLog({ level: "info", logger: "FS", data: msg }); } catch {} };
 
       app.onhostcontextchanged = (ctx: any) => {
         if (ctx.displayMode) {
