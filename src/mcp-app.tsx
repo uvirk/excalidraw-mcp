@@ -57,6 +57,22 @@ function convertRawElements(els: any[]): any[] {
   return [...converted, ...pseudos];
 }
 
+/** Fix SVG viewBox to 4:3 by expanding the smaller dimension and centering. */
+function fixViewBox4x3(svg: SVGSVGElement): void {
+  const vb = svg.getAttribute("viewBox")?.split(" ").map(Number);
+  if (!vb || vb.length !== 4) return;
+  const [vx, vy, vw, vh] = vb;
+  const r = vw / vh;
+  if (Math.abs(r - 4 / 3) < 0.01) return;
+  if (r > 4 / 3) {
+    const h2 = Math.round(vw * 3 / 4);
+    svg.setAttribute("viewBox", `${vx} ${vy - Math.round((h2 - vh) / 2)} ${vw} ${h2}`);
+  } else {
+    const w2 = Math.round(vh * 4 / 3);
+    svg.setAttribute("viewBox", `${vx - Math.round((w2 - vw) / 2)} ${vy} ${w2} ${vh}`);
+  }
+}
+
 function extractViewportAndElements(elements: any[]): {
   viewport: ViewportRect | null;
   drawElements: any[];
@@ -351,24 +367,9 @@ function DiagramView({ toolInput, isFinal, displayMode, onElements, editedElemen
         wrapper.appendChild(svg);
       }
 
-      // Always fix SVG viewBox to 4:3 (expand smaller dimension, center)
+      // Always fix SVG viewBox to 4:3
       const renderedSvg = wrapper.querySelector("svg");
-      if (renderedSvg) {
-        const vb = renderedSvg.getAttribute("viewBox")?.split(" ").map(Number);
-        if (vb && vb.length === 4) {
-          const [vx, vy, vw, vh] = vb;
-          const r = vw / vh;
-          if (Math.abs(r - 4 / 3) > 0.01) {
-            if (r > 4 / 3) {
-              const h2 = Math.round(vw * 3 / 4);
-              renderedSvg.setAttribute("viewBox", `${vx} ${vy - Math.round((h2 - vh) / 2)} ${vw} ${h2}`);
-            } else {
-              const w2 = Math.round(vh * 4 / 3);
-              renderedSvg.setAttribute("viewBox", `${vx - Math.round((w2 - vw) / 2)} ${vy} ${w2} ${vh}`);
-            }
-          }
-        }
-      }
+      if (renderedSvg) fixViewBox4x3(renderedSvg as SVGSVGElement);
 
       // Animate viewport in scene space, convert to SVG space at apply time
       if (viewport) {
@@ -538,6 +539,8 @@ function DiagramView({ toolInput, isFinal, displayMode, onElements, editedElemen
         } else {
           wrapper.appendChild(svg);
         }
+        const final = wrapper.querySelector("svg");
+        if (final) fixViewBox4x3(final as SVGSVGElement);
       } catch {}
     })();
   }, [editedElements]);
