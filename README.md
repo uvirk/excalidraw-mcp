@@ -63,12 +63,54 @@ PRs welcome! See [Local](#local) above for build instructions.
 
 ### Deploy your own instance
 
+#### Vercel
+
 You can deploy your own copy to Vercel in a few clicks:
 
 1. Fork this repo
 2. Go to [vercel.com/new](https://vercel.com/new) and import your fork
 3. No environment variables needed — just deploy
 4. Your server will be at `https://your-project.vercel.app/mcp`
+
+#### Azure Container Apps
+
+Deploy to Azure using the [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (`azd`):
+
+```bash
+# Authenticate with Azure
+azd auth login
+
+# Deploy infrastructure and application in one step
+azd up
+```
+
+You will be prompted for an environment name and Azure location. Once complete, your MCP server endpoint will be printed:
+
+```
+SERVICE_APP_URI = https://<your-app>.azurecontainerapps.io
+```
+
+Use `https://<your-app>.azurecontainerapps.io/mcp` as your remote MCP server URL.
+
+To use with [Azure AI Foundry](https://learn.microsoft.com/azure/ai-services/agents/), add the deployed URL as an MCP tool endpoint in your Foundry agent configuration.
+
+<details>
+<summary>Manual Docker deployment</summary>
+
+```bash
+# Build the container image
+docker build -t excalidraw-mcp .
+
+# Run locally
+docker run -p 8080:8080 excalidraw-mcp
+
+# Push to Azure Container Registry
+az acr login --name <your-registry>
+docker tag excalidraw-mcp <your-registry>.azurecr.io/excalidraw-mcp:latest
+docker push <your-registry>.azurecr.io/excalidraw-mcp:latest
+```
+
+</details>
 
 ### Release checklist
 

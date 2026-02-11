@@ -4,3 +4,4 @@ dist/
 *.mcpb
 .vercel
 bun.lock
+.azure/
