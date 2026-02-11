@@ -74,41 +74,109 @@ You can deploy your own copy to Vercel in a few clicks:
 
 #### Azure Container Apps
 
-Deploy to Azure using the [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (`azd`):
+Deploy to [Azure Container Apps](https://learn.microsoft.com/azure/container-apps/overview) using the Azure Developer CLI (`azd`). This provisions all required Azure resources and deploys the MCP server in a single command.
+
+**Prerequisites:**
+
+- An [Azure subscription](https://azure.microsoft.com/free/)
+- [Azure Developer CLI (`azd`)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) installed
+- [Docker](https://docs.docker.com/get-docker/) installed and running (used to build the container image)
+
+**Step 1 — Clone and navigate to the repo:**
 
 ```bash
-# Authenticate with Azure
-azd auth login
+git clone https://github.com/uvirk/excalidraw-mcp.git
+cd excalidraw-mcp
+```
 
-# Deploy infrastructure and application in one step
+**Step 2 — Authenticate with Azure:**
+
+```bash
+azd auth login
+```
+
+**Step 3 — Deploy everything:**
+
+```bash
 azd up
 ```
 
-You will be prompted for an environment name and Azure location. Once complete, your MCP server endpoint will be printed:
+You will be prompted for:
+- **Environment name** — a label for this deployment (e.g. `excalidraw-prod`)
+- **Azure location** — the region to deploy to (e.g. `eastus2`, `westus3`)
+
+`azd up` will automatically:
+1. Create a resource group (`rg-<environment-name>`)
+2. Provision an Azure Container Registry, Log Analytics workspace, and Container Apps environment
+3. Build the Docker image and push it to the registry
+4. Deploy the container to Azure Container Apps with external ingress
+
+When complete, the output will display your endpoint:
 
 ```
-SERVICE_APP_URI = https://<your-app>.azurecontainerapps.io
+SERVICE_APP_URI = https://<your-app>.<region>.azurecontainerapps.io
 ```
 
-Use `https://<your-app>.azurecontainerapps.io/mcp` as your remote MCP server URL.
+**Step 4 — Use the MCP endpoint:**
 
-To use with [Azure AI Foundry](https://learn.microsoft.com/azure/ai-services/agents/), add the deployed URL as an MCP tool endpoint in your Foundry agent configuration.
+Your MCP server URL is:
+
+```
+https://<your-app>.<region>.azurecontainerapps.io/mcp
+```
+
+Add this URL as a remote MCP server in any MCP-compatible client (Claude, ChatGPT, VS Code, etc.).
+
+**Updating the deployment:**
+
+After making code changes, redeploy with:
+
+```bash
+azd deploy
+```
+
+This rebuilds the container and updates the app without reprovisioning infrastructure.
+
+**Cleaning up resources:**
+
+To remove all provisioned Azure resources and avoid ongoing charges:
+
+```bash
+azd down
+```
 
 <details>
-<summary>Manual Docker deployment</summary>
+<summary>Using with Azure AI Foundry</summary>
+
+To use the deployed MCP server as a tool in [Azure AI Foundry](https://learn.microsoft.com/azure/ai-services/agents/):
+
+1. Open your project in [Azure AI Foundry](https://ai.azure.com)
+2. Navigate to your agent configuration
+3. Add a new MCP tool and paste your endpoint URL: `https://<your-app>.<region>.azurecontainerapps.io/mcp`
+4. The `read_me` and `create_view` tools will be available to the agent
+
+</details>
+
+<details>
+<summary>Manual Docker deployment (without azd)</summary>
+
+If you prefer to manage infrastructure yourself, you can build and push the container image manually:
 
 ```bash
 # Build the container image
 docker build -t excalidraw-mcp .
 
-# Run locally
+# Test locally
 docker run -p 8080:8080 excalidraw-mcp
+# Server available at http://localhost:8080/mcp
 
-# Push to Azure Container Registry
+# Push to an existing Azure Container Registry
 az acr login --name <your-registry>
 docker tag excalidraw-mcp <your-registry>.azurecr.io/excalidraw-mcp:latest
 docker push <your-registry>.azurecr.io/excalidraw-mcp:latest
 ```
+
+Then create a Container App in the Azure Portal or via `az containerapp create` pointing to your image.
 
 </details>
 
