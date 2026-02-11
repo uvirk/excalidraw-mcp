@@ -51,7 +51,7 @@ module containerAppsEnvironment './core/container-apps-environment.bicep' = {
     location: location
     tags: tags
     name: !empty(containerAppsEnvironmentName) ? containerAppsEnvironmentName : '${abbrs.appManagedEnvironments}${resourceToken}'
-    logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
+    logAnalyticsWorkspaceName: monitoring.outputs.logAnalyticsWorkspaceName
   }
 }
 

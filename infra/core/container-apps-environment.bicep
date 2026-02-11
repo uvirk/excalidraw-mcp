@@ -1,7 +1,11 @@
 param name string
 param location string = resourceGroup().location
 param tags object = {}
-param logAnalyticsWorkspaceId string
+param logAnalyticsWorkspaceName string
+
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
+  name: logAnalyticsWorkspaceName
+}
 
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: name
@@ -11,9 +15,8 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01'
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
-        customerId: reference(logAnalyticsWorkspaceId, '2023-09-01').customerId
-        #disable-next-line use-resource-symbol-reference
-        sharedKey: listKeys(logAnalyticsWorkspaceId, '2023-09-01').primarySharedKey
+        customerId: logAnalyticsWorkspace.properties.customerId
+        sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
       }
     }
   }
