@@ -146,6 +146,53 @@ azd down
 ```
 
 <details>
+<summary>CI/CD with GitHub Actions</summary>
+
+The repository includes a GitHub Actions workflow (`.github/workflows/azure-deploy.yml`) that automatically builds and deploys to Azure Container Apps.
+
+**What it does:**
+- **On pull requests:** runs typecheck and build validation
+- **On push to `main` / manual dispatch:** builds, provisions Azure infrastructure via Bicep, and deploys the container
+
+**Setup:**
+
+1. **Create an Azure AD application** with a federated credential for GitHub Actions OIDC:
+
+   ```bash
+   # Create an app registration and service principal
+   az ad app create --display-name "excalidraw-mcp-github"
+   az ad sp create --id <appId>
+
+   # Assign Contributor + AcrPush roles on your subscription
+   az role assignment create --assignee <appId> --role Contributor --scope /subscriptions/<subscriptionId>
+   az role assignment create --assignee <appId> --role AcrPush --scope /subscriptions/<subscriptionId>
+
+   # Add federated credential for GitHub Actions
+   az ad app federated-credential create --id <appId> --parameters '{
+     "name": "github-actions-main",
+     "issuer": "https://token.actions.githubusercontent.com",
+     "subject": "repo:<owner>/<repo>:environment:production",
+     "audiences": ["api://AzureADTokenExchange"]
+   }'
+   ```
+
+2. **Create a `production` environment** in your GitHub repository: **Settings** → **Environments** → **New environment** → `production`
+
+3. **Add the following repository variables** (Settings → Secrets and variables → Actions → Variables):
+
+   | Variable | Description | Example |
+   |----------|-------------|---------|
+   | `AZURE_CLIENT_ID` | Application (client) ID of the Azure AD app | `00000000-0000-0000-0000-000000000000` |
+   | `AZURE_TENANT_ID` | Directory (tenant) ID | `00000000-0000-0000-0000-000000000000` |
+   | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID | `00000000-0000-0000-0000-000000000000` |
+   | `AZURE_ENV_NAME` | azd environment name | `excalidraw-prod` |
+   | `AZURE_LOCATION` | Azure region | `eastus2` |
+
+4. Push to `main` or trigger the workflow manually from the **Actions** tab.
+
+</details>
+
+<details>
 <summary>Using with Azure AI Foundry</summary>
 
 To use the deployed MCP server as a tool in [Azure AI Foundry](https://learn.microsoft.com/azure/ai-services/agents/):
