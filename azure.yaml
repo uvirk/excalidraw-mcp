@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: excalidraw-mcp
+metadata:
+  template: excalidraw-mcp@0.0.1
+services:
+  app:
+    project: .
+    host: containerapp
+    language: js
+    docker:
+      path: Dockerfile
